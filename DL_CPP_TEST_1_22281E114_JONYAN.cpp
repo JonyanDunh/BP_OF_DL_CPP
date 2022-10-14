@@ -310,9 +310,11 @@ void read_Mnist_Images(string filename, vector<vector<double>>& images)
 int main()
 {
     vector<double>labels;
-    read_Mnist_Label("/Users/jonyandunh/Documents/GitHub/BP_OF_DL_CPP/t10k-labels.idx1-ubyte", labels);
+    //read_Mnist_Label("/Users/jonyandunh/Documents/GitHub/BP_OF_DL_CPP/t10k-labels.idx1-ubyte", labels);
+    read_Mnist_Label("t10k-labels.idx1-ubyte", labels);
     vector<vector<double>>images;
-    read_Mnist_Images("/Users/jonyandunh/Documents/GitHub/BP_OF_DL_CPP/t10k-images.idx3-ubyte", images);
+    //read_Mnist_Images("/Users/jonyandunh/Documents/GitHub/BP_OF_DL_CPP/t10k-images.idx3-ubyte", images);
+    read_Mnist_Images("t10k-images.idx3-ubyte", images);
 
 
     auto m = images.size();      // 训练集矩阵行数
