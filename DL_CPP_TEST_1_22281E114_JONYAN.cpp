@@ -58,9 +58,9 @@ public:
 };
 class ReLULayer {
 public:
-    MatrixXd mask;
+    Matrix<bool, Dynamic, Dynamic> mask;
     MatrixXd forward(MatrixXd x) {
-        Matrix<bool, Dynamic, Dynamic> mask;
+
         mask = (x.array() <= 0);
         for (int i = 0; i < x.rows(); i++)
         {
@@ -77,7 +77,6 @@ public:
     MatrixXd backward(MatrixXd dout) {
         for (int i = 0; i < dout.rows(); i++)
         {
-
             for (int z = 0; z < dout.cols(); z++)
             {
                 if (mask(i, z) == true)
@@ -141,7 +140,9 @@ public:
         t = t1;
         SoftmaxLayer SoftmaxLayer;
         y = SoftmaxLayer.forward(x);
+
         Cross_entropy_error_Layer Cross_entropy_error_Layer;
+
         loss = Cross_entropy_error_Layer.forward(y, t);
         return loss;
     };
@@ -182,13 +183,13 @@ public:
         AffineLayer2.init(params["W2"], params["b2"]);
         Affinelayers["Affine1"] = AffineLayer1;
         Affinelayers["Affine2"] = AffineLayer2;
-        ReLUlayers["Relu1"] = ReLULayer1;
+        ReLUlayers["RelU1"] = ReLULayer1;
     }   
 
     MatrixXd  predict(MatrixXd x) {
 
         x=Affinelayers["Affine1"].forward(x);
-        x = ReLUlayers["Relu1"].forward(x);
+        x = ReLUlayers["RelU1"].forward(x);
         x = Affinelayers["Affine2"].forward(x);
         return x;
         
@@ -209,12 +210,13 @@ public:
 
     grads gradient(MatrixXd x, MatrixXd t)
     {
+        grads grads;
         loss(x, t);
         MatrixXd dout = LastLayer.backward();
         dout = Affinelayers["Affine2"].backward(dout);
-        dout= ReLUlayers["Relu1"].backward(dout);
+        dout= ReLUlayers["RelU1"].backward(dout);
         dout = Affinelayers["Affine1"].backward(dout);
-        grads grads;
+
         grads.W1 = Affinelayers["Affine1"].dW;
         grads.b1 = Affinelayers["Affine1"].db;
         grads.W2 = Affinelayers["Affine2"].dW;
@@ -324,11 +326,12 @@ int main()
 
 
     }
-    MatrixXd labels2(1,labels.size());
-    for (int j = 0; j < b; j++)
+    MatrixXd labels2(images.size(),10);
+    labels2.fill(0);
+    for (int j = 0; j < images.size(); j++)
     {
 
-        labels2(0,j)=labels[j];
+        labels2(j,(int)labels[j])=1;
 
     }
 
@@ -339,18 +342,10 @@ int main()
     cout<<"训练集MatrixXd矩阵列数:" << images2.cols()<< "\n";
     cout<<"训练集标签个数:" << labels2.cols()<< "\n";
     cout<<"训练集标签MatrixXd矩阵个数:" << b<< "\n";
-    cout<<"训练集前5行：";
-    /*for (int i=0;i<5;i++)
-    {
-        cout<< images2.row(i)<<"\n";
-    }*/
-
-
      Network_2_layer network;
         network.init(784,100,10);
-        //cout<<network.predict(images2);
-        cout<<labels2.row(0);
-            //cout<<network.gradient(images2,labels2).W1;
+        ReLULayer ReLULayer;
+            cout<<network.gradient(images2,labels2).W1;
 
     return 0;
 }
