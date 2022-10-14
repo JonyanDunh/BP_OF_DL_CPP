@@ -58,9 +58,9 @@ public:
 };
 class ReLULayer {
 public:
-    MatrixXd mask;
+    Matrix<bool, Dynamic, Dynamic> mask;
     MatrixXd forward(MatrixXd x) {
-        Matrix<bool, Dynamic, Dynamic> mask;
+
         mask = (x.array() <= 0);
         for (int i = 0; i < x.rows(); i++)
         {
@@ -77,7 +77,6 @@ public:
     MatrixXd backward(MatrixXd dout) {
         for (int i = 0; i < dout.rows(); i++)
         {
-
             for (int z = 0; z < dout.cols(); z++)
             {
                 if (mask(i, z) == true)
@@ -101,9 +100,9 @@ public:
 };
 class Cross_entropy_error_Layer {
 public:
-    double forward(MatrixXd y, MatrixXd t) {
+    double forward(MatrixXd y, MatrixXd t,int batch_size) {
         double delta = 1e-7;
-        return -(t.array() * (y.array() + delta).log()).sum();
+        return (-(t.array() * (y.array() + delta).log()).sum())/batch_size;
     };
 
 
@@ -123,8 +122,7 @@ public:
     }
     MatrixXd forward(MatrixXd x1) {
         x = x1;
-
-        return x*W+b;
+        return x*W;
     }
     MatrixXd backward(MatrixXd dout) {
         MatrixXd dx = dout*W.transpose();
@@ -142,13 +140,18 @@ public:
         t = t1;
         SoftmaxLayer SoftmaxLayer;
         y = SoftmaxLayer.forward(x);
+
         Cross_entropy_error_Layer Cross_entropy_error_Layer;
-        loss = Cross_entropy_error_Layer.forward(y, t);
+
+        loss = Cross_entropy_error_Layer.forward(y, t,t.rows());
+        cout<<"平均误差："<<loss;
         return loss;
     };
     MatrixXd backward() {
         int batch_size = t.rows();
+
         return (y - t).array() / batch_size;
+
 
     };
 
@@ -180,16 +183,16 @@ public:
         ReLULayer ReLULayer1;
         
         AffineLayer1.init(params["W1"], params["b1"]);
-        AffineLayer1.init(params["W2"], params["b2"]);
+        AffineLayer2.init(params["W2"], params["b2"]);
         Affinelayers["Affine1"] = AffineLayer1;
         Affinelayers["Affine2"] = AffineLayer2;
-        ReLUlayers["Relu1"] = ReLULayer1;
+        ReLUlayers["RelU1"] = ReLULayer1;
     }   
 
     MatrixXd  predict(MatrixXd x) {
 
         x=Affinelayers["Affine1"].forward(x);
-        x = ReLUlayers["Relu1"].forward(x);
+        x = ReLUlayers["RelU1"].forward(x);
         x = Affinelayers["Affine2"].forward(x);
         return x;
         
@@ -210,12 +213,13 @@ public:
 
     grads gradient(MatrixXd x, MatrixXd t)
     {
+        grads grads;
         loss(x, t);
         MatrixXd dout = LastLayer.backward();
         dout = Affinelayers["Affine2"].backward(dout);
-        dout= ReLUlayers["Relu1"].backward(dout);
+        dout= ReLUlayers["RelU1"].backward(dout);
         dout = Affinelayers["Affine1"].backward(dout);
-        grads grads;
+
         grads.W1 = Affinelayers["Affine1"].dW;
         grads.b1 = Affinelayers["Affine1"].db;
         grads.W2 = Affinelayers["Affine2"].dW;
@@ -285,12 +289,15 @@ void read_Mnist_Images(string filename, vector<vector<double>>& images)
         for (int i = 0; i < number_of_images; i++)
         {
             vector<double>tp;
+
+
             for (int r = 0; r < n_rows; r++)
             {
                 for (int c = 0; c < n_cols; c++)
                 {
                     unsigned char image = 0;
                     file.read((char*)&image, sizeof(image));
+
                     tp.push_back(image);
                 }
             }
@@ -302,28 +309,54 @@ void read_Mnist_Images(string filename, vector<vector<double>>& images)
 int main()
 {
     vector<double>labels;
-    read_Mnist_Label("t10k-labels.idx1-ubyte", labels);
+    read_Mnist_Label("/Users/jonyandunh/Documents/GitHub/BP_OF_DL_CPP/t10k-labels.idx1-ubyte", labels);
     vector<vector<double>>images;
-    read_Mnist_Images("t10k-images.idx3-ubyte", images);
+    read_Mnist_Images("/Users/jonyandunh/Documents/GitHub/BP_OF_DL_CPP/t10k-images.idx3-ubyte", images);
 
 
     auto m = images.size();      // 训练集矩阵行数
     auto n = images[0].size();   // 训练集矩阵列数
     auto b = labels.size();      // 训练集标签个数
+    MatrixXd images2(images.size(),images[0].size());
+    for (int j = 0; j < n; j++)
+    {
+        for (int i = 0; i < m; i++)
+        {
+            //cout<< images[j][i];
+            images2(i,j)=images[i][j];
+
+        }
 
 
-     VectorXd actual_Y(b);                   // 初始化训练集实际值
-     // 将训练集标签分类，0 = 1，非0 = -1
-     for (unsigned i = 0; i < b; i++)
-         labels[i] == 0 ? actual_Y(i) = 1 : actual_Y(i) = -1;
+    }
+    MatrixXd labels2(images.size(),10);
+    labels2.fill(0);
+    for (int j = 0; j < images.size(); j++)
+    {
 
-     //Eigen::MatrixXd test = Eigen::Map<Eigen::Matrix<double, 3, 1> >(images.data());
+        labels2(j,(int)labels[j])=1;
 
+    }
+
+
+    cout<<"训练集矩阵行数:" << m<< "\n";
+    cout<<"训练集矩阵列数:" << n<< "\n";
+    cout<<"训练集MatrixXd矩阵行数:" << images2.rows()<< "\n";
+    cout<<"训练集MatrixXd矩阵列数:" << images2.cols()<< "\n";
+    cout<<"训练集标签个数:" << labels2.cols()<< "\n";
+    cout<<"训练集标签MatrixXd矩阵个数:" << b<< "\n";
      Network_2_layer network;
-        network.init(784,50,10);
-        //cout << Characteristic_matrix.cols();
-       // network.gradient(images, labels);
+        network.init(784,100,10);
+        ReLULayer ReLULayer;
+    double learning_rate=0.1;
+    for(int i=0;i<images.size();i++){
+        grads grads=network.gradient(images2,labels2);
+        network.params["W1"]-=learning_rate*grads.W1;
+        network.params["b1"]-=learning_rate*grads.b1;
+        network.params["W2"]-=learning_rate*grads.W2;
+        network.params["W1"]-=learning_rate*grads.W1;
 
+    }
     return 0;
 }
 
