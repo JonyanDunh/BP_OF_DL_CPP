@@ -100,9 +100,9 @@ public:
 };
 class Cross_entropy_error_Layer {
 public:
-    double forward(MatrixXd y, MatrixXd t) {
+    double forward(MatrixXd y, MatrixXd t,int batch_size) {
         double delta = 1e-7;
-        return -(t.array() * (y.array() + delta).log()).sum();
+        return (-(t.array() * (y.array() + delta).log()).sum())/batch_size;
     };
 
 
@@ -143,12 +143,15 @@ public:
 
         Cross_entropy_error_Layer Cross_entropy_error_Layer;
 
-        loss = Cross_entropy_error_Layer.forward(y, t);
+        loss = Cross_entropy_error_Layer.forward(y, t,t.rows());
+        cout<<"平均误差："<<loss;
         return loss;
     };
     MatrixXd backward() {
         int batch_size = t.rows();
+
         return (y - t).array() / batch_size;
+
 
     };
 
@@ -345,8 +348,15 @@ int main()
      Network_2_layer network;
         network.init(784,100,10);
         ReLULayer ReLULayer;
-            cout<<network.gradient(images2,labels2).W1;
+    double learning_rate=0.1;
+    for(int i=0;i<images.size();i++){
+        grads grads=network.gradient(images2,labels2);
+        network.params["W1"]-=learning_rate*grads.W1;
+        network.params["b1"]-=learning_rate*grads.b1;
+        network.params["W2"]-=learning_rate*grads.W2;
+        network.params["W1"]-=learning_rate*grads.W1;
 
+    }
     return 0;
 }
 
