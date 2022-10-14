@@ -317,12 +317,12 @@ int main()
      for (unsigned i = 0; i < b; i++)
          labels[i] == 0 ? actual_Y(i) = 1 : actual_Y(i) = -1;
 
-     Eigen::MatrixXd test = Eigen::Map<Eigen::Matrix<double, 3, 1> >(images.data());
+     //Eigen::MatrixXd test = Eigen::Map<Eigen::Matrix<double, 3, 1> >(images.data());
 
      Network_2_layer network;
         network.init(784,50,10);
         //cout << Characteristic_matrix.cols();
-        network.gradient(images, labels);
+       // network.gradient(images, labels);
 
     return 0;
 }
