@@ -123,8 +123,7 @@ public:
     }
     MatrixXd forward(MatrixXd x1) {
         x = x1;
-
-        return x*W+b;
+        return x*W;
     }
     MatrixXd backward(MatrixXd dout) {
         MatrixXd dx = dout*W.transpose();
@@ -180,7 +179,7 @@ public:
         ReLULayer ReLULayer1;
         
         AffineLayer1.init(params["W1"], params["b1"]);
-        AffineLayer1.init(params["W2"], params["b2"]);
+        AffineLayer2.init(params["W2"], params["b2"]);
         Affinelayers["Affine1"] = AffineLayer1;
         Affinelayers["Affine2"] = AffineLayer2;
         ReLUlayers["Relu1"] = ReLULayer1;
@@ -285,12 +284,15 @@ void read_Mnist_Images(string filename, vector<vector<double>>& images)
         for (int i = 0; i < number_of_images; i++)
         {
             vector<double>tp;
+
+
             for (int r = 0; r < n_rows; r++)
             {
                 for (int c = 0; c < n_cols; c++)
                 {
                     unsigned char image = 0;
                     file.read((char*)&image, sizeof(image));
+
                     tp.push_back(image);
                 }
             }
@@ -302,27 +304,53 @@ void read_Mnist_Images(string filename, vector<vector<double>>& images)
 int main()
 {
     vector<double>labels;
-    read_Mnist_Label("t10k-labels.idx1-ubyte", labels);
+    read_Mnist_Label("/Users/jonyandunh/Documents/GitHub/BP_OF_DL_CPP/t10k-labels.idx1-ubyte", labels);
     vector<vector<double>>images;
-    read_Mnist_Images("t10k-images.idx3-ubyte", images);
+    read_Mnist_Images("/Users/jonyandunh/Documents/GitHub/BP_OF_DL_CPP/t10k-images.idx3-ubyte", images);
 
 
     auto m = images.size();      // 训练集矩阵行数
     auto n = images[0].size();   // 训练集矩阵列数
     auto b = labels.size();      // 训练集标签个数
+    MatrixXd images2(images.size(),images[0].size());
+    for (int j = 0; j < n; j++)
+    {
+        for (int i = 0; i < m; i++)
+        {
+            //cout<< images[j][i];
+            images2(i,j)=images[i][j];
+
+        }
 
 
-     VectorXd actual_Y(b);                   // 初始化训练集实际值
-     // 将训练集标签分类，0 = 1，非0 = -1
-     for (unsigned i = 0; i < b; i++)
-         labels[i] == 0 ? actual_Y(i) = 1 : actual_Y(i) = -1;
+    }
+    MatrixXd labels2(1,labels.size());
+    for (int j = 0; j < b; j++)
+    {
 
-     Eigen::MatrixXd test = Eigen::Map<Eigen::Matrix<double, 3, 1> >(images.data());
+        labels2(0,j)=labels[j];
+
+    }
+
+
+    cout<<"训练集矩阵行数:" << m<< "\n";
+    cout<<"训练集矩阵列数:" << n<< "\n";
+    cout<<"训练集MatrixXd矩阵行数:" << images2.rows()<< "\n";
+    cout<<"训练集MatrixXd矩阵列数:" << images2.cols()<< "\n";
+    cout<<"训练集标签个数:" << labels2.cols()<< "\n";
+    cout<<"训练集标签MatrixXd矩阵个数:" << b<< "\n";
+    cout<<"训练集前5行：";
+    /*for (int i=0;i<5;i++)
+    {
+        cout<< images2.row(i)<<"\n";
+    }*/
+
 
      Network_2_layer network;
-        network.init(784,50,10);
-        //cout << Characteristic_matrix.cols();
-        network.gradient(images, labels);
+        network.init(784,100,10);
+        //cout<<network.predict(images2);
+        cout<<labels2.row(0);
+            //cout<<network.gradient(images2,labels2).W1;
 
     return 0;
 }
