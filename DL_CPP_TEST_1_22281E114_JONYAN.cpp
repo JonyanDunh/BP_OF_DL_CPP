@@ -347,9 +347,9 @@ int main()
     cout<<"训练集标签MatrixXd矩阵个数:" << b<< "\n";
 
      Network_2_layer network;
-        network.init(784,100,10);
+        network.init(784,50,10);
         ReLULayer ReLULayer;
-    double learning_rate=10000;
+    double learning_rate=0.00001;
     srand(time(nullptr));//设置随机数种子
 
     for(int i=0;i<10000;i++){
@@ -374,8 +374,10 @@ int main()
         cout << "mini_batch_images矩阵列数:" << mini_batch_images.cols() << "\n";
         cout << "mini_batch_labels矩阵行数:" << mini_batch_labels.rows() << "\n";
         cout << "mini_batch_labels矩阵列数:" << mini_batch_labels.cols() << "\n";*/
+        cout<<"第"<<i<<"次运算:";
         grads grads = network.gradient(mini_batch_images, mini_batch_labels);
         network.params["W1"]-=learning_rate*grads.W1;
+        cout<<network.gradient(mini_batch_images, mini_batch_labels).W1.row(0)<<"\n";
         network.params["b1"]-=learning_rate*grads.b1;
         network.params["W2"]-=learning_rate*grads.W2;
         network.params["b2"]-=learning_rate*grads.b2;
