@@ -145,7 +145,7 @@ public:
         Cross_entropy_error_Layer Cross_entropy_error_Layer;
 
         loss = Cross_entropy_error_Layer.forward(y, t,t.rows());
-        cout<<"平均误差："<<loss;
+        cout<<"平均误差："<<loss<<"\n";
         return loss;
     };
     MatrixXd backward() {
@@ -310,9 +310,9 @@ void read_Mnist_Images(string filename, vector<vector<double>>& images)
 int main()
 {
     vector<double>labels;
-    read_Mnist_Label("t10k-labels.idx1-ubyte", labels);
+    read_Mnist_Label("/Users/jonyandunh/Documents/GitHub/BP_OF_DL_CPP/t10k-labels.idx1-ubyte", labels);
     vector<vector<double>>images;
-    read_Mnist_Images("t10k-images.idx3-ubyte", images);
+    read_Mnist_Images("/Users/jonyandunh/Documents/GitHub/BP_OF_DL_CPP/t10k-images.idx3-ubyte", images);
 
 
     auto m = images.size();      // 训练集矩阵行数
@@ -339,7 +339,6 @@ int main()
 
     }
 
-
     cout<<"训练集矩阵行数:" << m<< "\n";
     cout<<"训练集矩阵列数:" << n<< "\n";
     cout<<"训练集MatrixXd矩阵行数:" << images2.rows()<< "\n";
@@ -350,13 +349,13 @@ int main()
      Network_2_layer network;
         network.init(784,100,10);
         ReLULayer ReLULayer;
-    double learning_rate=0.1;
+    double learning_rate=10000;
     srand(time(nullptr));//设置随机数种子
 
-    for(int i=0;i<1;i++){
+    for(int i=0;i<10000;i++){
         int randoxNumber = 1 + rand() % (images2.rows() -100 - 1);
         MatrixXd mini_batch_images(100, images[0].size());
-        MatrixXd mini_batch_labels(1, 100);
+        MatrixXd mini_batch_labels(100, 10);
         for (int t = 0; t < 100; t++) {
 
             for (int z = 0; z < images2.cols(); z++) {
@@ -364,20 +363,23 @@ int main()
                 mini_batch_images(t, z) = images2(randoxNumber + t, z);
             }
         };
-        for (int f = 0; f < 100; f++) {
+        for (int t = 0; t < 100; t++) {
 
-                mini_batch_labels(0, f) = labels2(0, randoxNumber + f);
+            for (int z = 0; z < 10; z++) {
+
+                mini_batch_labels(t, z) = labels2(randoxNumber + t, z);
+            }
         };
-        cout << "mini_batch_images矩阵行数:" << mini_batch_images.rows() << "\n";
+        /*cout << "mini_batch_images矩阵行数:" << mini_batch_images.rows() << "\n";
         cout << "mini_batch_images矩阵列数:" << mini_batch_images.cols() << "\n";
         cout << "mini_batch_labels矩阵行数:" << mini_batch_labels.rows() << "\n";
-        cout << "mini_batch_labels矩阵列数:" << mini_batch_labels.cols() << "\n";
-        /*grads grads = network.gradient(mini_batch_images, mini_batch_labels);
+        cout << "mini_batch_labels矩阵列数:" << mini_batch_labels.cols() << "\n";*/
+        grads grads = network.gradient(mini_batch_images, mini_batch_labels);
         network.params["W1"]-=learning_rate*grads.W1;
         network.params["b1"]-=learning_rate*grads.b1;
         network.params["W2"]-=learning_rate*grads.W2;
-        network.params["W1"]-=learning_rate*grads.W1;
-        cout <<"loss:" <<network.loss(images2, labels2)<<"\n";*/
+        network.params["b2"]-=learning_rate*grads.b2;
+
 
     }
     return 0;
