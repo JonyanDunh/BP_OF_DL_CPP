@@ -7,6 +7,7 @@
 #include <fstream>
 #include <string>
 #include <vector>
+
 using namespace Eigen;
 using namespace std;
 class SigmoidLayer
@@ -114,7 +115,7 @@ public:
     MatrixXd b;
     MatrixXd x;
     MatrixXd dW;
-    double db;
+    MatrixXd db;
     void init(MatrixXd W1, MatrixXd b1) {
 
         W = W1;
@@ -127,7 +128,7 @@ public:
     MatrixXd backward(MatrixXd dout) {
         MatrixXd dx = dout*W.transpose();
         dW = x.transpose() * dout;
-        db = dout.sum();
+        db = dout.colwise().sum();
         return dx;
     }
 };
@@ -158,9 +159,9 @@ public:
 };
 struct grads {
     MatrixXd W1;
-    double b1;
+    MatrixXd b1;
     MatrixXd W2;
-    double b2;
+    MatrixXd b2;
 };
 class Network_2_layer
 {
@@ -309,9 +310,9 @@ void read_Mnist_Images(string filename, vector<vector<double>>& images)
 int main()
 {
     vector<double>labels;
-    read_Mnist_Label("/Users/jonyandunh/Documents/GitHub/BP_OF_DL_CPP/t10k-labels.idx1-ubyte", labels);
+    read_Mnist_Label("t10k-labels.idx1-ubyte", labels);
     vector<vector<double>>images;
-    read_Mnist_Images("/Users/jonyandunh/Documents/GitHub/BP_OF_DL_CPP/t10k-images.idx3-ubyte", images);
+    read_Mnist_Images("t10k-images.idx3-ubyte", images);
 
 
     auto m = images.size();      // 训练集矩阵行数
@@ -345,16 +346,38 @@ int main()
     cout<<"训练集MatrixXd矩阵列数:" << images2.cols()<< "\n";
     cout<<"训练集标签个数:" << labels2.cols()<< "\n";
     cout<<"训练集标签MatrixXd矩阵个数:" << b<< "\n";
+
      Network_2_layer network;
         network.init(784,100,10);
         ReLULayer ReLULayer;
     double learning_rate=0.1;
-    for(int i=0;i<images.size();i++){
-        grads grads=network.gradient(images2,labels2);
+    srand(time(nullptr));//设置随机数种子
+
+    for(int i=0;i<1;i++){
+        int randoxNumber = 1 + rand() % (images2.rows() -100 - 1);
+        MatrixXd mini_batch_images(100, images[0].size());
+        MatrixXd mini_batch_labels(1, 100);
+        for (int t = 0; t < 100; t++) {
+
+            for (int z = 0; z < images2.cols(); z++) {
+
+                mini_batch_images(t, z) = images2(randoxNumber + t, z);
+            }
+        };
+        for (int f = 0; f < 100; f++) {
+
+                mini_batch_labels(0, f) = labels2(0, randoxNumber + f);
+        };
+        cout << "mini_batch_images矩阵行数:" << mini_batch_images.rows() << "\n";
+        cout << "mini_batch_images矩阵列数:" << mini_batch_images.cols() << "\n";
+        cout << "mini_batch_labels矩阵行数:" << mini_batch_labels.rows() << "\n";
+        cout << "mini_batch_labels矩阵列数:" << mini_batch_labels.cols() << "\n";
+        /*grads grads = network.gradient(mini_batch_images, mini_batch_labels);
         network.params["W1"]-=learning_rate*grads.W1;
         network.params["b1"]-=learning_rate*grads.b1;
         network.params["W2"]-=learning_rate*grads.W2;
         network.params["W1"]-=learning_rate*grads.W1;
+        cout <<"loss:" <<network.loss(images2, labels2)<<"\n";*/
 
     }
     return 0;
