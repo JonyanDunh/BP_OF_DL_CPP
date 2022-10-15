@@ -1,5 +1,6 @@
 ﻿
-//《深度学习中的误差反向传播法基于c++的实现方法》
+//《深度学习中的误差反向传播法基于c++的实现方法 BY JONYANDUNH》
+// 本项目以Mnist手写集为数据，共10000条数据，样本位于目录下的t10k-images.idx3-ubyte与t10k-labels.idx1-ubyte中
 // 项目地址：https://github.com/JonyanDunh/BP_OF_DL_CPP
 // 项目创建日期：2022.10.11
 //bilibili：JonyanDunh https://space.bilibili.com/96876893 （作者也是bilibili动态头像的发明者）
@@ -148,9 +149,9 @@ public:
 		return result;
 	}
 	MatrixXd backward(MatrixXd dout) {
-		MatrixXd dx = dout * (W.transpose());
-		dW = (x.transpose()) * dout;
-		db = dout.colwise().sum();
+		MatrixXd dx = dout * (W.transpose());//求出了正向传播时x的导数
+		dW = (x.transpose()) * dout;//求出了正向传播时权重的导数
+		db = dout.colwise().sum();//求出了正向传播时偏置的导数
 		return dx;
 	}
 };
@@ -344,38 +345,30 @@ void run_deep_learning(MatrixXd images, MatrixXd labels,int input_size, int hidd
 		network.Affinelayers["Affine1"].init(network.params["W1"], network.params["b1"]);//更新Affine1层的权重和偏置
 		network.Affinelayers["Affine2"].init(network.params["W2"], network.params["b2"]);//更新Affine2层的权重和偏置
 	}
-
 }
-MatrixXd* read_data() {//读取数据的函数
-
+MatrixXd* read_minst_data() {//读取MNIST手写集数据的函数
 	vector<double>labels;
 	//read_Mnist_Label("/Users/jonyandunh/Documents/GitHub/BP_OF_DL_CPP/t10k-labels.idx1-ubyte", labels);
 	read_Mnist_Label("t10k-labels.idx1-ubyte", labels);
 	vector<vector<double>>images;
 	//read_Mnist_Images("/Users/jonyandunh/Documents/GitHub/BP_OF_DL_CPP/t10k-images.idx3-ubyte", images);
 	read_Mnist_Images("t10k-images.idx3-ubyte", images);
-
-
 	auto m = images.size();      // 训练集矩阵行数
 	auto n = images[0].size();   // 训练集矩阵列数
 	auto b = labels.size();      // 训练集标签个数
-
 	MatrixXd images2(images.size(), images[0].size());
 	for (int j = 0; j < n; j++)
 	{
 		for (int i = 0; i < m; i++)
 		{
 			images2(i, j) = images[i][j];
-
 		}
 	}
 	MatrixXd labels2(images.size(), 10);
 	labels2.fill(0);
 	for (int j = 0; j < images.size(); j++)
 	{
-
 		labels2(j, (int)labels[j]) = 1;
-
 	}
 	cout << "训练集矩阵行数:" << m << "\n" << endl;
 	cout << "训练集矩阵列数:" << n << "\n" << endl;
@@ -385,16 +378,15 @@ MatrixXd* read_data() {//读取数据的函数
 	cout << "训练集标签MatrixXd矩阵个数:" << b << "\n" << endl;
 	static  MatrixXd result[] = { images2,labels2 };
 	return result;
-
 }
 int main()//主函数
 {
-	MatrixXd* data = read_data();//读取images\labels的矩阵
+	MatrixXd* data = read_minst_data();//读取images\labels的矩阵
 	MatrixXd images = data[0];//读取images的矩阵
 	MatrixXd labels = data[1];//读取labels的矩阵
 	double weight_init_std = 0.01;//初始化权重时的高斯分布规模
 	double learning_rate = 0.002;//学习率
-	int mini_batch_count = 100;//每一批读取数据的数量
+	int mini_batch_count = 10;//每一批读取数据的数量
 	int learning_times = 10000;//学习次数
 	int hidden_size = 100;//隐藏层数量
 	int input_size = images.cols();
