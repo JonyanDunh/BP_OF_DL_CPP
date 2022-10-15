@@ -18,6 +18,9 @@
     <ClCompile Include="DL_CPP_TEST_1_22281E114_JONYAN.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="SoftmaxLayer.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

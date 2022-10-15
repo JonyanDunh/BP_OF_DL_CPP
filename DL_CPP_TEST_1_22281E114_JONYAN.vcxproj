@@ -130,6 +130,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="DL_CPP_TEST_1_22281E114_JONYAN.cpp" />
+    <ClCompile Include="SoftmaxLayer.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
