@@ -107,21 +107,21 @@ public:
 };
 class Cross_entropy_error_Layer {
 public:
-    double forward(MatrixXd y, MatrixXd t,int batch_size) {
+    double forward(MatrixXd y, MatrixXd t) {
         double delta = 1e-7;
-        MatrixXd entropy_error;
-        MatrixXd list_of_right_label_y(1,y.rows());
+        double sum=0;
         for(int i=0;i<y.rows();i++)
         {
             for(int z=0;z<y.cols();z++)
             {
                 if(t(i,z)==1)
                 {
-                    list_of_right_label_y(0,i)=y(i,z);
+
+                    sum+=log(y(i,z)+delta);
                 }
             }
         }
-        return  ((list_of_right_label_y.array()+delta).log()).sum()/y.rows();
+        return  -sum/y.rows();
         //return (-(t.array() * (y.array() + delta).log()).sum())/batch_size;
     };
 
@@ -135,6 +135,7 @@ public:
     MatrixXd x;
     MatrixXd dW;
     MatrixXd db;
+
     void init(MatrixXd W1, MatrixXd b1) {
 
         W = W1;
@@ -142,12 +143,18 @@ public:
     }
     MatrixXd forward(MatrixXd x1) {
         x = x1;
-        return x*W;
+        MatrixXd result=x*W;
+        for(int i;i<(x*W).rows();i++)
+        {
+            result.row(i)=result.row(i)+b;
+        }
+        return result;
     }
     MatrixXd backward(MatrixXd dout) {
-        MatrixXd dx = dout*W.transpose();
-        dW = x.transpose() * dout;
+        MatrixXd dx = dout*(W.transpose());
+        dW = (x.transpose()) * dout;
         db = dout.colwise().sum();
+       // cout<<"dbsum"<<dout.sum()<<"\n";
         return dx;
     }
 };
@@ -163,8 +170,8 @@ public:
 
         Cross_entropy_error_Layer Cross_entropy_error_Layer;
 
-        loss = Cross_entropy_error_Layer.forward(y, t,t.rows());
-       // cout<<"平均误差："<<loss<<"\n";
+        loss = Cross_entropy_error_Layer.forward(y, t);
+        cout<<"平均误差："<<loss<<"\n";
         return loss;
     };
     MatrixXd backward() {
@@ -192,8 +199,8 @@ public:
     SoftmaxWithLossLayer LastLayer;
     void init(int input_size, int hidden_size, int output_size, double weight_init_std = 0.1)
     {
-        MatrixXd hidden_zeros(1, hidden_size);
-        MatrixXd output_zeros(1, output_size);
+        MatrixXd hidden_zeros( 1,hidden_size);
+        MatrixXd output_zeros(1,output_size );
         params["W1"] = weight_init_std * MatrixXd::Random(input_size, hidden_size);
         params["b1"] = hidden_zeros.setZero();
         params["W2"] = weight_init_std * MatrixXd::Random(hidden_size, output_size);
@@ -201,11 +208,11 @@ public:
         AffineLayer AffineLayer1;
         AffineLayer AffineLayer2;
         ReLULayer ReLULayer1;
-        
-        AffineLayer1.init(params["W1"], params["b1"]);
-        AffineLayer2.init(params["W2"], params["b2"]);
         Affinelayers["Affine1"] = AffineLayer1;
         Affinelayers["Affine2"] = AffineLayer2;
+        Affinelayers["Affine1"].init(params["W1"], params["b1"]);
+        Affinelayers["Affine2"].init(params["W2"], params["b2"]);
+
         ReLUlayers["RelU1"] = ReLULayer1;
     }   
 
@@ -233,18 +240,20 @@ public:
 
     grads gradient(MatrixXd x, MatrixXd t)
     {
-        grads grads;
+
         loss(x, t);
+
         MatrixXd dout = LastLayer.backward();
         dout = Affinelayers["Affine2"].backward(dout);
         dout= ReLUlayers["RelU1"].backward(dout);
         dout = Affinelayers["Affine1"].backward(dout);
 
+        grads grads;
         grads.W1 = Affinelayers["Affine1"].dW;
-        cout<<grads.W1.sum()<<"\n";
         grads.b1 = Affinelayers["Affine1"].db;
         grads.W2 = Affinelayers["Affine2"].dW;
         grads.b2 = Affinelayers["Affine2"].db;
+        //cout<<grads.b1.sum()<<"\n";
         return grads;
     }
 };
@@ -369,15 +378,15 @@ int main()
     cout<<"训练集标签MatrixXd矩阵个数:" << b<< "\n";
 
      Network_2_layer network;
-        network.init(784,50,10);
+        network.init(784,100,10);
         ReLULayer ReLULayer;
-    double learning_rate=0.01;
+    double learning_rate=0.001;
     srand(time(nullptr));//设置随机数种子
     int mini_batch_count=100;
-    //int randoxNumber = 1 + rand() % (images2.rows() -mini_batch_count - 1);
-    int randoxNumber =100;
-    for(int i=0;i<10000;i++){
 
+    //int randoxNumber =100;
+    for(int i=0;i<10000;i++){
+        int randoxNumber = 1 + rand() % (images2.rows() -mini_batch_count - 1);
         MatrixXd mini_batch_images(mini_batch_count, images[0].size());
         MatrixXd mini_batch_labels(mini_batch_count, 10);
         for (int t = 0; t < mini_batch_count; t++) {
@@ -394,19 +403,16 @@ int main()
                 mini_batch_labels(t, z) = labels2(randoxNumber + t, z);
             }
         };
-        /*cout << "mini_batch_images矩阵行数:" << mini_batch_images.rows() << "\n";
-        cout << "mini_batch_images矩阵列数:" << mini_batch_images.cols() << "\n";
-        cout << "mini_batch_labels矩阵行数:" << mini_batch_labels.rows() << "\n";
-        cout << "mini_batch_labels矩阵列数:" << mini_batch_labels.cols() << "\n";*/
         cout<<"第"<<i<<"次运算:";
         grads grads = network.gradient(mini_batch_images, mini_batch_labels);
         network.params["W1"]-=learning_rate*grads.W1;
-        //cout<<network.params["W1"].row(0)<<"\n";
         network.params["b1"]-=learning_rate*grads.b1;
         network.params["W2"]-=learning_rate*grads.W2;
         network.params["b2"]-=learning_rate*grads.b2;
-        double loss=network.loss(mini_batch_images,mini_batch_labels);
-        cout<<"平均误差："<<loss<<"\n";
+        network.Affinelayers["Affine1"].init(network.params["W1"],network.params["b1"]);
+        network.Affinelayers["Affine2"].init(network.params["W2"],network.params["b2"]);
+
+
 
     }
     return 0;
