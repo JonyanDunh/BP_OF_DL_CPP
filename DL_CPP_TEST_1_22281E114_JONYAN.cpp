@@ -164,7 +164,7 @@ public:
         Cross_entropy_error_Layer Cross_entropy_error_Layer;
 
         loss = Cross_entropy_error_Layer.forward(y, t,t.rows());
-        cout<<"平均误差："<<loss<<"\n";
+       // cout<<"平均误差："<<loss<<"\n";
         return loss;
     };
     MatrixXd backward() {
@@ -405,7 +405,8 @@ int main()
         network.params["b1"]-=learning_rate*grads.b1;
         network.params["W2"]-=learning_rate*grads.W2;
         network.params["b2"]-=learning_rate*grads.b2;
-
+        double loss=network.loss(mini_batch_images,mini_batch_labels);
+        cout<<"平均误差："<<loss<<"\n";
 
     }
     return 0;
