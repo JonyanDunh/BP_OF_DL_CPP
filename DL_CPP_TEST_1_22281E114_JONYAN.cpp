@@ -93,7 +93,14 @@ public:
 class SoftmaxLayer {
 public:
     MatrixXd forward(MatrixXd x) {
-        return x.array().exp()/ x.array().exp().sum();
+        MatrixXd softmax(x.rows(), x.cols());
+
+        for (int i = 0; i < x.rows(); i++)
+        {
+            softmax.row(i)= x.row(i).array().exp() / x.row(i).array().exp().sum();
+
+        }
+        return softmax;
     };
 
 
@@ -103,7 +110,8 @@ class Cross_entropy_error_Layer {
 public:
     double forward(MatrixXd y, MatrixXd t,int batch_size) {
         double delta = 1e-7;
-        return (-(t.array() * (y.array() + delta).log()).sum())/batch_size;
+        return 0.5*((y - t).array().square()).sum();
+        //return (-(t.array() * (y.array() + delta).log()).sum())/batch_size;
     };
 
 
@@ -140,8 +148,9 @@ public:
     double forward(MatrixXd x, MatrixXd t1) {
         t = t1;
         SoftmaxLayer SoftmaxLayer;
+        
         y = SoftmaxLayer.forward(x);
-
+       // cout << "test:" << y.row(0) << "\n";
         Cross_entropy_error_Layer Cross_entropy_error_Layer;
 
         loss = Cross_entropy_error_Layer.forward(y, t,t.rows());
@@ -171,6 +180,8 @@ public:
     map<string, AffineLayer> Affinelayers;
     map<string, ReLULayer> ReLUlayers;
     SoftmaxWithLossLayer LastLayer;
+
+    ReLULayer ReLULayer1;
     void init(int input_size, int hidden_size, int output_size, double weight_init_std = 0.01)
     {
         MatrixXd hidden_zeros(1, hidden_size);
@@ -179,10 +190,9 @@ public:
         params["b1"] = hidden_zeros.setZero();
         params["W2"] = weight_init_std * MatrixXd::Random(hidden_size, output_size);
         params["b2"] = output_zeros.setZero();
+       
         AffineLayer AffineLayer1;
         AffineLayer AffineLayer2;
-        ReLULayer ReLULayer1;
-        
         AffineLayer1.init(params["W1"], params["b1"]);
         AffineLayer2.init(params["W2"], params["b2"]);
         Affinelayers["Affine1"] = AffineLayer1;
@@ -201,6 +211,7 @@ public:
     double  loss(MatrixXd x, MatrixXd t) {
         
         MatrixXd y = predict(x);
+        //cout << "倒数第二层列数:" << y.cols() << "\n";
         return LastLayer.forward(y, t);
     
     }
@@ -217,14 +228,17 @@ public:
         grads grads;
         loss(x, t);
         MatrixXd dout = LastLayer.backward();
+        
         dout = Affinelayers["Affine2"].backward(dout);
         dout= ReLUlayers["RelU1"].backward(dout);
+        
         dout = Affinelayers["Affine1"].backward(dout);
-
+        
         grads.W1 = Affinelayers["Affine1"].dW;
         grads.b1 = Affinelayers["Affine1"].db;
         grads.W2 = Affinelayers["Affine2"].dW;
         grads.b2 = Affinelayers["Affine2"].db;
+
         return grads;
     }
 };
@@ -349,13 +363,14 @@ int main()
     cout<<"训练集标签MatrixXd矩阵个数:" << b<< "\n";
 
      Network_2_layer network;
-        network.init(784,50,10);
+        network.init(784,10,10);
         ReLULayer ReLULayer;
-    double learning_rate=0.00001;
+    double learning_rate=10;
     srand(time(nullptr));//设置随机数种子
-
+    //int randoxNumber = 1 + rand() % (images2.rows() - 100 - 1);
+    int randoxNumber = 1;
     for(int i=0;i<10000;i++){
-        int randoxNumber = 1 + rand() % (images2.rows() -100 - 1);
+        
         MatrixXd mini_batch_images(100, images[0].size());
         MatrixXd mini_batch_labels(100, 10);
         for (int t = 0; t < 100; t++) {
@@ -379,12 +394,14 @@ int main()
         cout<<"第"<<i<<"次运算:";
         grads grads = network.gradient(mini_batch_images, mini_batch_labels);
         network.params["W1"]-=learning_rate*grads.W1;
-        cout<<network.gradient(mini_batch_images, mini_batch_labels).W1.row(0)<<"\n";
+        
+        cout<< "W1.sum:"<< grads.W1.sum() << "\n";
         network.params["b1"]-=learning_rate*grads.b1;
+        //cout << "b1.sum:" << network.params["b1"].sum() << "\n";
         network.params["W2"]-=learning_rate*grads.W2;
+       // cout << "W2.sum:" << network.params["W2"].sum() << "\n";
         network.params["b2"]-=learning_rate*grads.b2;
-
-
+        //cout << "b2.sum:" << network.params["b2"].sum() << "\n";
     }
     return 0;
 }
