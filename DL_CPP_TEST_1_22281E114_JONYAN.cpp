@@ -163,15 +163,13 @@ public:
     double loss;
     MatrixXd y;
     MatrixXd t;
-    double forward(MatrixXd x, MatrixXd t1) {
+    double forward(MatrixXd y1, MatrixXd t1) {
         t = t1;
-        SoftmaxLayer SoftmaxLayer;
-        y = SoftmaxLayer.forward(x);
-
+        y=y1;
         Cross_entropy_error_Layer Cross_entropy_error_Layer;
 
         loss = Cross_entropy_error_Layer.forward(y, t);
-        cout<<"平均误差："<<loss<<"\n";
+        printf("平均误差：%lf\n",loss);
         return loss;
     };
     MatrixXd backward() {
@@ -227,16 +225,29 @@ public:
     double  loss(MatrixXd x, MatrixXd t) {
         
         MatrixXd y = predict(x);
+        SoftmaxLayer SoftmaxLayer;
+        y = SoftmaxLayer.forward(y);
+        printf("精度:%lf\t",accuracy(y,t));
         return LastLayer.forward(y, t);
     
     }
-   /* double accuracy(MatrixXd x, MatrixXd t) {
-
-        MatrixXd y = predict(x);
+    double accuracy(MatrixXd y, MatrixXd t) {
 
 
+        double correct=0;
+        for(int i=0;i<y.rows();i++)
+        {
+            //cout<<y.rows()<<endl;
+            int r,c;
+            int r2,c2;
+            y.row(i).maxCoeff(&r,&c);
+            t.row(i).maxCoeff(&r2,&c2);
+            if(c==c2)
+                correct=correct+1.0;
+        }
 
-    }*/
+        return  (correct/y.rows());
+    }
 
     grads gradient(MatrixXd x, MatrixXd t)
     {
@@ -370,22 +381,20 @@ int main()
 
     }
 
-    cout<<"训练集矩阵行数:" << m<< "\n";
-    cout<<"训练集矩阵列数:" << n<< "\n";
-    cout<<"训练集MatrixXd矩阵行数:" << images2.rows()<< "\n";
-    cout<<"训练集MatrixXd矩阵列数:" << images2.cols()<< "\n";
-    cout<<"训练集标签个数:" << labels2.cols()<< "\n";
-    cout<<"训练集标签MatrixXd矩阵个数:" << b<< "\n";
+    cout<<"训练集矩阵行数:" << m<< "\n"<<endl;
+    cout<<"训练集矩阵列数:" << n<< "\n"<<endl;
+    cout<<"训练集MatrixXd矩阵行数:" << images2.rows()<< "\n"<<endl;
+    cout<<"训练集MatrixXd矩阵列数:" << images2.cols()<< "\n"<<endl;
+    cout<<"训练集标签个数:" << labels2.cols()<< "\n"<<endl;
+    cout<<"训练集标签MatrixXd矩阵个数:" << b<< "\n"<<endl;
 
      Network_2_layer network;
         network.init(784,100,10);
         ReLULayer ReLULayer;
-    double learning_rate=0.001;
+    double learning_rate=0.002;
     srand(time(nullptr));//设置随机数种子
     int mini_batch_count=100;
-
-    //int randoxNumber =100;
-    for(int i=0;i<10000;i++){
+    for(int i=0;i<100000;i++){
         int randoxNumber = 1 + rand() % (images2.rows() -mini_batch_count - 1);
         MatrixXd mini_batch_images(mini_batch_count, images[0].size());
         MatrixXd mini_batch_labels(mini_batch_count, 10);
@@ -403,7 +412,7 @@ int main()
                 mini_batch_labels(t, z) = labels2(randoxNumber + t, z);
             }
         };
-        cout<<"第"<<i<<"次运算:";
+        printf("第%d次运算:\t",i);
         grads grads = network.gradient(mini_batch_images, mini_batch_labels);
         network.params["W1"]-=learning_rate*grads.W1;
         network.params["b1"]-=learning_rate*grads.b1;
