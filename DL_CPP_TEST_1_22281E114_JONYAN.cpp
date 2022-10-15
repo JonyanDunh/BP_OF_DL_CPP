@@ -195,7 +195,7 @@ public:
     map<string, AffineLayer> Affinelayers;
     map<string, ReLULayer> ReLUlayers;
     SoftmaxWithLossLayer LastLayer;
-    void init(int input_size, int hidden_size, int output_size, double weight_init_std = 0.1)
+    void init(int input_size, int hidden_size, int output_size, double weight_init_std = 0.01)
     {
         MatrixXd hidden_zeros( 1,hidden_size);
         MatrixXd output_zeros(1,output_size );
@@ -393,7 +393,7 @@ int main()
         ReLULayer ReLULayer;
     double learning_rate=0.002;
     srand(time(nullptr));//设置随机数种子
-    int mini_batch_count=100;
+    int mini_batch_count=8000;
     for(int i=0;i<100000;i++){
         int randoxNumber = 1 + rand() % (images2.rows() -mini_batch_count - 1);
         MatrixXd mini_batch_images(mini_batch_count, images[0].size());
